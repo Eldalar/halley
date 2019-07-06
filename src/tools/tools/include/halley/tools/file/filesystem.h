@@ -24,8 +24,8 @@ namespace Halley {
 		static void copyFile(const Path& src, const Path& dst);
 		static bool remove(const Path& path);
 
-		static void writeFile(const Path& path, gsl::span<const gsl::byte> data);
-		static void writeFile(const Path& path, const Bytes& data);
+		static bool writeFile(const Path& path, gsl::span<const gsl::byte> data);
+		static bool writeFile(const Path& path, const Bytes& data);
 		static Bytes readFile(const Path& path);
 
 		static std::vector<Path> enumerateDirectory(const Path& path);
