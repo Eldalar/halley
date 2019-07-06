@@ -8,7 +8,11 @@
 #include "halley/core/resources/asset_pack.h"
 #include "halley/tools/project/project.h"
 #include "halley/tools/assets/import_assets_database.h"
+
+#include <thread>
+#include <chrono>
 using namespace Halley;
+using namespace std::chrono_literals;
 
 
 bool AssetPackListing::Entry::operator<(const Entry& other) const
@@ -195,6 +199,12 @@ void AssetPacker::generatePack(const String& packId, const AssetPackListing& pac
 	}
 
 	// Write pack
-	FileSystem::writeFile(dst, pack.writeOut());
+	bool success = false;
+	do {
+		success = FileSystem::writeFile(dst, pack.writeOut());
+		if (!success) {
+			std::this_thread::sleep_for(50ms);
+		}
+	} while (!success);
 	Logger::logInfo("- Packed " + toString(packListing.getEntries().size()) + " entries on \"" + packId + "\" (" + String::prettySize(data.size()) + ").");
 }
