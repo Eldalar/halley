@@ -18,6 +18,7 @@ namespace Halley
 
 	private:
 		Vector<String> generateComponentHeader(ComponentSchema component);
+		Vector<String> generateComponentSource(Halley::Path path, ComponentSchema component);
 		Vector<String> generateSystemHeader(SystemSchema& system) const;
 		Vector<String> generateSystemStub(SystemSchema& system) const;
 		Vector<String> generateMessageHeader(MessageSchema message);

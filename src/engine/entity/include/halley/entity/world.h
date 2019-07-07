@@ -43,6 +43,7 @@ namespace Halley {
 
 		Service& addService(std::shared_ptr<Service> service);
 		void loadSystems(const ConfigNode& config, std::function<std::unique_ptr<System>(String)> createFunction);
+		void loadEntities(const ConfigNode& root, std::function<void(Halley::EntityRef&, String, Halley::ConfigNode&)> createFunction);
 
 		template <typename T>
 		T& getService() const

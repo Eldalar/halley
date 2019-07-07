@@ -66,8 +66,11 @@ CodeGenResult CodegenCPP::generateComponent(ComponentSchema component)
 {
 	String className = component.name + "Component";
 
+	Halley::Path pathHeader = makePath("components", className, "h");
+	Halley::Path pathSource = makePath("components", className, "cpp");
 	CodeGenResult result;
-	result.emplace_back(CodeGenFile(makePath("components", className, "h"), generateComponentHeader(component)));
+	result.emplace_back(CodeGenFile(pathHeader, generateComponentHeader(component)));
+	result.emplace_back(CodeGenFile(pathSource, generateComponentSource(pathHeader, component)));
 	return result;
 }
 
@@ -95,9 +98,18 @@ CodeGenResult CodegenCPP::generateRegistry(const Vector<ComponentSchema>& compon
 	Vector<String> registryCpp {
 		"#include <halley.hpp>",
 		"using namespace Halley;",
+		""
+	};
+
+	registryCpp.push_back("// Component factory functions");
+	for (auto& comp : components) {
+		registryCpp.push_back("void halleyDeserialize" + comp.name + "Component(EntityRef&, const ConfigNode&, const ConfigNode&);");
+	}
+	
+	registryCpp.insert(registryCpp.end(), {
 		"",
 		"// System factory functions"
-	};
+		} );
 
 	for (auto& sys: systems) {
 		registryCpp.push_back("System* halleyCreate" + sys.name + "System();");
@@ -108,6 +120,8 @@ CodeGenResult CodegenCPP::generateRegistry(const Vector<ComponentSchema>& compon
 		"",
 		"using SystemFactoryPtr = System* (*)();",
 		"using SystemFactoryMap = HashMap<String, SystemFactoryPtr>;",
+		"using ComponentFactoryPtr = void(*)(EntityRef&, const ConfigNode&, const ConfigNode&);",
+		"using ComponentFactoryMap = HashMap<String, ComponentFactoryPtr>;",
 		"",
 		"static SystemFactoryMap makeSystemFactories() {",
 		"	SystemFactoryMap result;"
@@ -132,12 +146,42 @@ CodeGenResult CodegenCPP::generateRegistry(const Vector<ComponentSchema>& compon
 		"	}",
 		"}"
 	});
+	registryCpp.insert(registryCpp.end(), {
+		"static ComponentFactoryMap makeComponentFactories() {",
+		"	ComponentFactoryMap result;"
+	});
+
+	for (auto& comp : components) {
+		String name = comp.name + "Component";
+		registryCpp.insert(registryCpp.end(),
+			"	result[\"" + name + "\"] = &halleyDeserialize" + name + ";"
+		);
+	}
+
+	registryCpp.insert(registryCpp.end(), {
+		"	return result;",
+		"}"
+		"",
+		"namespace Halley {",
+		"	void deserializeComponent(Halley::EntityRef& entity, String name, const Halley::ConfigNode& componentNode, const Halley::ConfigNode* templateNode) {",
+		"		static ConfigNode emptyConfigNode;",
+		"		static ComponentFactoryMap componentFactories = makeComponentFactories();",
+		"		auto result = componentFactories.find(name);",
+		"		if (result == componentFactories.end()) {",
+		"			throw Exception(\"Component not found: \" + name, HalleyExceptions::Entity);",
+		"		} else {",
+		"			result->second(entity, componentNode, templateNode != nullptr ? *templateNode : emptyConfigNode);",
+		"		}",
+		"	}",
+		"}"
+		});
 
 	Vector<String> registryH{
 		"#pragma once",
 		"",
 		"namespace Halley {",
 		"	std::unique_ptr<System> createSystem(String name);",
+		"	void deserializeComponent(Halley::EntityRef& entity, String name, const Halley::ConfigNode& componentNode, const Halley::ConfigNode* templateNode = nullptr);",
 		"}"
 	};
 
@@ -177,6 +221,75 @@ Vector<String> CodegenCPP::generateComponentHeader(ComponentSchema component)
 	gen.finish()
 		.writeTo(contents);
 
+	return contents;
+}
+
+Vector<String> CodegenCPP::generateComponentSource(Halley::Path path, ComponentSchema component)
+{
+	Vector<String> contents = {
+		"#pragma once",
+		"",
+		"#include \"" + path.getFilename().getString() + "\"",
+		""
+	};
+
+	String name = component.name + "Component";
+	
+	contents.insert(contents.end(),
+		{
+			"void halleyDeserialize" + name + "(Halley::EntityRef& entityRef, const Halley::ConfigNode& data, const Halley::ConfigNode& templateData) {",
+			"    " + name + " component;",
+			"    if (data.getType() == Halley::ConfigNodeType::Map) {",
+		});
+	for (Halley::VariableSchema& member : component.members) {
+		String type = member.type.name;
+		if (type.startsWith("Halley::")) {
+			type = type.substr(8);
+		}
+		if (type[0] >= 'a' && type[0] <= 'z') {
+			type[0] -= 32;
+		}
+		contents.insert(contents.end(),
+		{
+			"        component." + member.name + " = templateData[\"" + member.name + "\"].as" + type + "();",
+			"		if( templateData.hasKey( \"" + member.name + "\" ) )  {",
+			"			component." + member.name + " = templateData[\"" + member.name + "\"].as" + type + "();",
+			"		} else {",
+			"			component." + member.name + " = data[\"" + member.name + "\"].as" + type + "();",
+			"		}"
+		} );
+	}
+	contents.insert(contents.end(),
+		{
+			"	} else {",
+			"		size_t index = 0;"
+		});
+	for (Halley::VariableSchema& member : component.members) {
+		String type = member.type.name;
+		if (type.startsWith("Halley::")) {
+			type = type.substr(8);
+		}
+		if (type[0] >= 'a' && type[0] <= 'z') {
+			type[0] -= 32;
+		}
+		contents.insert(contents.end(),
+			{
+				"		if( templateData.hasKey( \"" + member.name + "\" ) )  {",
+				"			component." + member.name + " = templateData[\"" + member.name + "\"].as" + type + "();",
+				"		} else {",
+				"			component." + member.name + " = data[index++].as" + type + "();",
+				"		}"
+			});
+	}
+	contents.insert(contents.end(),
+		{
+			"    }"
+		});
+	contents.insert(contents.end(),
+		{
+			"    entityRef.addComponent<" + name + ">(std::move(component));",
+			"}"
+		} );
 	return contents;
 }
 

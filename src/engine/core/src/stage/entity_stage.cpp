@@ -5,12 +5,15 @@
 #include "game/game.h"
 using namespace Halley;
 
-std::unique_ptr<World> EntityStage::createWorld(String configName, std::function<std::unique_ptr<System>(String)> createFunction)
+std::unique_ptr<World> EntityStage::createWorld(String configName,
+												std::function<std::unique_ptr<System>(String)> createSystemFunction,
+												std::function<void(Halley::EntityRef&, String, Halley::ConfigNode&)> createComponentFunction )
 {
 	auto world = std::make_unique<World>(&getAPI(), getGame().isDevMode());
 
 	auto config = getResource<ConfigFile>(configName);
-	world->loadSystems(getResource<ConfigFile>(configName)->getRoot(), createFunction);
+	world->loadSystems(config->getRoot(), createSystemFunction);
+	world->loadEntities(config->getRoot(), createComponentFunction );
 
 	return world;
 }

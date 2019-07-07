@@ -386,10 +386,11 @@ function(halleyProject name sources headers genDefinitions targetDir)
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${targetDir})
 
 	file (GLOB_RECURSE ${name}_sources_gen "gen/*.cpp")
+	file (GLOB_RECURSE ${name}_sources_components "gen/components/*.cpp")
 	file (GLOB_RECURSE ${name}_sources_systems "src/systems/*.cpp")
 	file (GLOB_RECURSE ${name}_headers_gen "gen/*.h")
 	
-	set(proj_sources ${sources} ${${name}_sources_gen} ${${name}_sources_systems})
+	set(proj_sources ${sources} ${${name}_sources_gen} ${${name}_sources_components} ${${name}_sources_systems})
 	set(proj_headers ${headers} ${${name}_headers_gen} ${genDefinitions})
 
 	assign_source_group(${proj_sources})

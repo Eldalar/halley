@@ -129,6 +129,20 @@ void World::loadSystems(const ConfigNode& root, std::function<std::unique_ptr<Sy
 	}
 }
 
+void World::loadEntities(const ConfigNode& root, std::function<void(Halley::EntityRef&, String, Halley::ConfigNode&)> createFunction) {
+	if (root.hasKey("entities")) {
+		auto entities = root["entities"].asMap();
+		for (auto iter = entities.begin(); iter != entities.end(); ++iter) {
+			String entityName = iter->first;
+			Halley::EntityRef entity = createEntity();
+			auto entityData = iter->second.asMap();
+			for (auto& component : entityData) {
+				createFunction( entity, component.first, component.second );
+			}
+		}
+	}
+}
+
 Service& World::getService(const String& name) const
 {
 	auto iter = services.find(name);
