@@ -163,7 +163,7 @@ CodeGenResult CodegenCPP::generateRegistry(const Vector<ComponentSchema>& compon
 		"}"
 		"",
 		"namespace Halley {",
-		"	void deserializeComponent(Halley::EntityRef& entity, String name, const Halley::ConfigNode& componentNode, const Halley::ConfigNode* templateNode) {",
+		"	void deserializeComponent(Halley::EntityRef& entity, String name, const Halley::ConfigNode& componentNode, const Halley::ConfigNode* templateNode = nullptr) {",
 		"		static ConfigNode emptyConfigNode;",
 		"		static ComponentFactoryMap componentFactories = makeComponentFactories();",
 		"		auto result = componentFactories.find(name);",
@@ -172,6 +172,24 @@ CodeGenResult CodegenCPP::generateRegistry(const Vector<ComponentSchema>& compon
 		"		} else {",
 		"			result->second(entity, componentNode, templateNode != nullptr ? *templateNode : emptyConfigNode);",
 		"		}",
+		"	}",
+		"",
+		"	std::function<void(Halley::EntityRef&, String, const Halley::ConfigNode&)> createComponentAndTemplateDeserializationMethod(Halley::Resources& resources, std::function<void(String&, const ConfigFile&)> onConfigLoaded) {",
+		"		return [&resources, onConfigLoaded](Halley::EntityRef& entity, String name, const Halley::ConfigNode& config) {",
+		"			String assetID = \"template/\" + name;",
+		"			if (resources.exists<ConfigFile>(assetID)) {",
+		"				std::shared_ptr<const ConfigFile> templateConfig = resources.get<ConfigFile>(assetID);",
+		"				auto& members = templateConfig->getRoot()[\"template\"][\"members\"];",
+		"				for (auto& member : members.asMap()) {",
+		"					String componentName = member.first;",
+		"					const ConfigNode& templateData = member.second;",
+		"					Halley::deserializeComponent(entity, componentName, config, &templateData);",
+		"				}",
+		"				onConfigLoaded(assetID, *templateConfig);",
+		"			} else {",
+		"				Halley::deserializeComponent(entity, name, config);",
+		"			}",
+		"		};",
 		"	}",
 		"}"
 		});
@@ -182,6 +200,7 @@ CodeGenResult CodegenCPP::generateRegistry(const Vector<ComponentSchema>& compon
 		"namespace Halley {",
 		"	std::unique_ptr<System> createSystem(String name);",
 		"	void deserializeComponent(Halley::EntityRef& entity, String name, const Halley::ConfigNode& componentNode, const Halley::ConfigNode* templateNode = nullptr);",
+		"	std::function<void(Halley::EntityRef&, String, const Halley::ConfigNode&)> createComponentAndTemplateDeserializationMethod(Halley::Resources& resources, std::function<void(String&, const ConfigFile& configFile)> onConfigLoaded);",
 		"}"
 	};
 

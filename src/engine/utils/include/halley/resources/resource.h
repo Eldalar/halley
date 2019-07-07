@@ -27,7 +27,8 @@ namespace Halley
 		Sprite,
 		SpriteSheet,
 		Shader,
-		Mesh
+		Mesh,
+		Template
 	};
 
 	// This order matters.
