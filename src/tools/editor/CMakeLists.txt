@@ -57,9 +57,11 @@ endif()
 target_link_libraries (halley-editor
         halley-tools
         ${FREETYPE_LIBRARIES}
-        ${YAMLCPP_LIBRARY}
+        #${YAMLCPP_LIBRARY}
         ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
         ${EXTRA_LIBS}
+        optimized ${YAMLCPP_LIBRARY_RELEASE}
+        debug ${YAMLCPP_LIBRARY_DEBUG}
         )
 
