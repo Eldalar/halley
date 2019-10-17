@@ -79,6 +79,19 @@ LocalisedString I18N::get(const String& key) const
 	return LocalisedString(*this, key, "#MISSING#");
 }
 
+Maybe<LocalisedString> I18N::get(const String& key, const I18NLanguage& language) const
+{
+	auto curLang = strings.find(language);
+	if (curLang != strings.end()) {
+		auto i = curLang->second.find(key);
+		if (i != curLang->second.end()) {
+			return LocalisedString(*this, key, i->second);
+		}
+	}
+
+	return {};
+}
+
 LocalisedString I18N::getPreProcessedUserString(const String& string) const
 {
 	if (string.startsWith("$")) {
@@ -186,6 +199,20 @@ I18NLanguageMatch I18NLanguage::getMatch(const I18NLanguage& other) const
 		return I18NLanguageMatch::Good;
 	}
 	return I18NLanguageMatch::Exact;
+}
+
+Maybe<I18NLanguage> I18NLanguage::getBestMatch(const std::vector<I18NLanguage>& languages, const I18NLanguage& target, Maybe<I18NLanguage> fallback)
+{
+	I18NLanguageMatch bestMatch = I18NLanguageMatch::None;
+	Maybe<I18NLanguage> result = fallback;
+	for (const auto& l: languages) {
+		auto m = l.getMatch(target);
+		if (int(m) > int(bestMatch)) {
+			bestMatch = m;
+			result = l;
+		}
+	}
+	return result;
 }
 
 bool I18NLanguage::operator==(const I18NLanguage& other) const

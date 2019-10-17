@@ -66,6 +66,8 @@ namespace Halley {
 
 		I18NLanguageMatch getMatch(const I18NLanguage& other) const;
 
+		static Maybe<I18NLanguage> getBestMatch(const std::vector<I18NLanguage>& languages, const I18NLanguage& target, Maybe<I18NLanguage> fallback = {});
+
 		bool operator==(const I18NLanguage& other) const;
 		bool operator!=(const I18NLanguage& other) const;
 		bool operator<(const I18NLanguage& other) const;
@@ -87,6 +89,7 @@ namespace Halley {
 		std::vector<I18NLanguage> getLanguagesAvailable() const;
 
 		LocalisedString get(const String& key) const;
+		Maybe<LocalisedString> get(const String& key, const I18NLanguage& language) const;
 		LocalisedString getPreProcessedUserString(const String& string) const;
 
 		template <typename T>

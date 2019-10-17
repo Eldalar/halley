@@ -695,7 +695,8 @@ std::shared_ptr<UIWidget> UIFactory::makePagedPane(const ConfigNode& entryNode)
 	auto pane = std::make_shared<UIPagedPane>(widgetNode["id"].asString(), int(pageNodes.size()));
 	for (int i = 0; i < int(pageNodes.size()); ++i) {
 		auto& pageNode = *pageNodes[i];
-		pane->getPage(i)->add(makeSizerPtr(pageNode), 1);
+		const auto element = pageNode.hasKey("widget") ? std::shared_ptr<IUIElement>(makeWidget(pageNode)) : makeSizerPtr(pageNode);
+		pane->getPage(i)->add(element, 1);
 	}
 
 	return pane;
@@ -803,7 +804,7 @@ bool UIFactory::resolveConditions(const ConfigNode& node) const
 	if (node.getType() == ConfigNodeType::Sequence) {
 		bool ok = true;
 		for (auto& c: node.asSequence()) {
-			ok &= hasCondition(c.asString());
+			ok &= resolveCondition(c.asString());
 		}
 		return ok;
 	} else {
