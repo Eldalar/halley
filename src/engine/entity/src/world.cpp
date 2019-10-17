@@ -3,6 +3,7 @@
 #include <halley/support/exception.h>
 #include <halley/data_structures/memory_pool.h>
 #include <halley/utils/utils.h>
+#include <halley/support/logger.h>
 #include "world.h"
 #include "system.h"
 #include "family.h"
@@ -137,7 +138,13 @@ void World::loadEntities(const ConfigNode& root, std::function<void(Halley::Enti
 			Halley::EntityRef entity = createEntity();
 			auto entityData = iter->second.asMap();
 			for (auto& component : entityData) {
-				createFunction( entity, component.first, component.second );
+				try {
+					createFunction(entity, component.first, component.second);
+				}
+				catch (const Exception& exception)
+				{
+					Logger::logError("Failed to create Entity " + entityName + ":\n" + exception.getMessage() );
+				}
 			}
 		}
 	}
