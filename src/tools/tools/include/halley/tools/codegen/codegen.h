@@ -45,6 +45,7 @@ namespace Halley
 	private:
 		void addSource(String name, gsl::span<const gsl::byte> data);
 		void addComponent(YAML::Node rootNode);
+		void addTemplate(YAML::Node rootNode);
 		void addSystem(YAML::Node rootNode);
 		void addMessage(YAML::Node rootNode);
 		void addType(YAML::Node rootNode);
@@ -52,6 +53,7 @@ namespace Halley
 
 		bool verbose;
 		HashMap<String, ComponentSchema> components;
+		HashMap<String, TemplateSchema> templates;
 		HashMap<String, SystemSchema> systems;
 		HashMap<String, MessageSchema> messages;
 		HashMap<String, CustomTypeSchema> types;

@@ -34,6 +34,7 @@ set(SOURCES
     "src/codegen/codegen.cpp"
     "src/codegen/codegen_tool.cpp"
     "src/codegen/component_schema.cpp"
+    "src/codegen/template_schema.cpp"
     "src/codegen/custom_type_schema.cpp"
     "src/codegen/message_schema.cpp"
     "src/codegen/system_schema.cpp"
@@ -90,6 +91,7 @@ set(HEADERS
     "include/halley/tools/make_font/make_font_tool.h"
 
     "include/halley/tools/codegen/component_schema.h"
+    "include/halley/tools/codegen/template_schema.h"
     "include/halley/tools/codegen/custom_type_schema.h"
     "include/halley/tools/codegen/fields_schema.h"
     "include/halley/tools/codegen/message_schema.h"

@@ -219,11 +219,16 @@ std::vector<Path> Codegen::generateCode(Path directory, ProgressReporter progres
 	for (auto& gen : gens) {
 		Path genDir = directory / gen->getDirectory();
 		Vector<ComponentSchema> comps;
+		Vector<TemplateSchema> temps;
 		Vector<SystemSchema> syss;
 
 		for (auto& comp : components) {
 			writeFiles(genDir, gen->generateComponent(comp.second), stats);
 			comps.push_back(comp.second);
+		}
+		for (auto& temp : templates) {
+			writeFiles(genDir, gen->generateTemplate(temp.second, components), stats);
+			temps.push_back(temp.second);
 		}
 		for (auto& sys : systems) {
 			if (sys.second.language == gen->getLanguage()) {
@@ -236,7 +241,7 @@ std::vector<Path> Codegen::generateCode(Path directory, ProgressReporter progres
 		}
 
 		// Registry
-		writeFiles(genDir, gen->generateRegistry(comps, syss), stats);
+		writeFiles(genDir, gen->generateRegistry(comps, temps, syss), stats);
 	}
 
 	// Has changes
@@ -275,6 +280,8 @@ void Codegen::addSource(String path, gsl::span<const gsl::byte> data)
 			throw Exception("YAML parse error in codegen definitions:\n\"" + document.as<std::string>() + "\"\nat " + curPos, HalleyExceptions::Tools);
 		} else if (document["component"].IsDefined()) {
 			addComponent(document);
+		} else if (document["template"].IsDefined()) {
+			addTemplate(document);
 		} else if (document["system"].IsDefined()) {
 			addSystem(document);
 		} else if (document["message"].IsDefined()) {
@@ -293,8 +300,21 @@ void Codegen::addComponent(YAML::Node rootNode)
 
 	if (components.find(comp.name) == components.end()) {
 		components[comp.name] = comp;
-	} else {
+	}
+	else {
 		throw Exception("Component already declared: " + comp.name, HalleyExceptions::Tools);
+	}
+}
+
+void Codegen::addTemplate(YAML::Node rootNode)
+{
+	auto temp = TemplateSchema(rootNode["template"]);
+
+	if (templates.find(temp.name) == templates.end()) {
+		templates[temp.name] = temp;
+	}
+	else {
+		throw Exception("Template already declared: " + temp.name, HalleyExceptions::Tools);
 	}
 }
 
